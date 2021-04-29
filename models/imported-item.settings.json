@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "",
+  "info": {
+    "name": "Imported Item"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "timestamps": true,
+    "increments": true,
+    "comment": ""
+  },
+  "attributes": {
+    "ContentType": {
+      "type": "string"
+    },
+    "ContentId": { "type": "integer" },
+    "importConfig": {
+      "model": "import-config",
+      "via": "importedItems",
+      "plugin": "import-content"
+    },
+    "importedFiles": {
+      "type": "json"
+    }
+  }
+}
