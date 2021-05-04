@@ -48,6 +48,13 @@ const resolveDataFromRequest = async ctx => {
   }
 };
 
+const getLocales = async () => {
+
+  
+
+  return {}
+} 
+
 const getItemsFromData = ({ dataType, body, options }) =>
   new Promise(async (resolve, reject) => {
     const parsedContentType = contentTypeParser(dataType);

@@ -127,7 +127,7 @@ const UploadFileForm = (props) => {
             </svg>
           <P>
             <span>
-              Drag & drop your file into this area or <span className={"underline"}>
+              Drag &amp; drop your file into this area or <span className={"underline"}>
                 browse
               </span> for a file to upload
             </span>

@@ -19,6 +19,7 @@
     "contentType": {
       "type": "string"
     },
+    "locales": { "type": "json" },
     "fieldMapping": { "type": "json" },
     "ongoing": {
       "type": "boolean"

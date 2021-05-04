@@ -14,7 +14,8 @@ import {
   PluginHeader,
   request
 } from "strapi-helper-plugin";
-import { Button, Select, Label } from "@buffetjs/core";
+import { Button, Checkbox, Select, Text, Label } from "@buffetjs/core";
+import { Fail, Success } from "@buffetjs/icons"
 import { get, has, isEmpty, pickBy, set } from "lodash";
 
 import Row from "../../components/Row";
@@ -39,6 +40,12 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [modelOptions, setModelOptions] = useState([])
   const [models, setModels] = useState([])
+  const [localeOptions, setLocaleOptions] = useState([])
+  const [locales, setLocales] = useState([])
+  const [saveAsDraft, setSaveAsDraft] = useState(true)
+  const [targetModel, setTargetModel] = useState()
+  const [hasWorkflow, setHasWorkflow] = useState(false)
+  const [defaultLocale, setDefaultLocale] = useState("en")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [importSource, setImportSource] = useState("upload")
@@ -50,10 +57,30 @@ const HomePage = () => {
   useEffect(() => {
     getModels().then(res => {
       const { modelsFound, modelOptionsFound } = res;
-      //console.log(modelsFound, modelOptionsFound)
+      // console.log('modelsFound, modelOptionsFound', modelsFound, modelOptionsFound)
       setModels(modelsFound)
       setModelOptions(modelOptionsFound)
-      setSelectedContentType(modelOptionsFound ? modelOptionsFound[0].value : "")
+      setTargetModel(modelsFound[0])
+      setSelectedContentType(modelOptionsFound[0]?.value)
+      setHasWorkflow(modelOptionsFound[0]?.workflow)
+    })
+  }, [])
+
+  useEffect(() => {
+    setTargetModel(models.find(model => 
+      model.uid === selectedContentType
+    ))
+    setHasWorkflow(!!modelOptions.find(model => 
+      model.value === selectedContentType && model.workflow
+    ))
+  }, [selectedContentType])
+
+  useEffect(() => {
+    getLocales().then(res => {
+      const { localesFound, localeOptionsFound } = res;
+      setLocales(localesFound)
+      setLocaleOptions(localeOptionsFound)
+      setDefaultLocale(localeOptionsFound.filter(locale => locale.default))
     })
   }, [])
 
@@ -62,9 +89,10 @@ const HomePage = () => {
     const importConfig = {
       ...analysisConfig,
       contentType: selectedContentType,
-      fieldMapping
+      fieldMapping,
+      options: { saveAsDraft, locales: localeOptions }
     };
-    console.log("onSaveImport config", importConfig)
+    // console.log("onSaveImport config", importConfig)
     try {
       await request("/import-content", { method: "POST", body: importConfig });
       setIsSaving(false)
@@ -88,11 +116,15 @@ const HomePage = () => {
       const modelOptionsFound = modelsFound.map(model => {
         return {
           label: get(model, ["schema", "name"], ""), // (name is used for display_name)
-          value: model.uid // (uid is used for table creations)
+          value: model.uid, // (uid is used for table creations)
+          workflow: model.schema?.draftAndPublish,
+          localized: model.schema?.pluginOptions?.i18n?.localized,
         };
       });
 
       setIsLoading(false);
+
+      // console.log('modelsFound', modelsFound, 'vs models', models)
 
       return { modelsFound, modelOptionsFound };
     } catch (e) {
@@ -101,6 +133,30 @@ const HomePage = () => {
     }
     return [];
   };
+
+  const getLocales = async () => {
+    setIsLoading(true);
+    try {
+	    const localesFound = await request("/i18n/locales", {
+        method: "GET"
+      });
+      const localeOptionsFound = localesFound.map(locale => {
+        return {
+          label: locale.name,
+          value: locale.code,
+          default: locale.isDefault
+        };
+      });
+
+      setIsLoading(false);
+
+      return { localesFound, localeOptionsFound };
+    } catch (e) {
+      setIsLoading(false)
+      strapi.notification.toggle({ type: 'error', message: `${e}` });
+    }
+    return [];
+  };  
 
   const onRequestAnalysis = async (config) => {
     setIsAnalyzing(true)
@@ -118,14 +174,6 @@ const HomePage = () => {
       strapi.notification.toggle({ type: 'error', message: `Analyze Failed, try again` });
       strapi.notification.toggle({ type: 'error', message: `${e}` });
     }
-  };
-
-  const selectImportSource = (importSource) => {
-    setImportSource(importSource);
-  };
-
-  const selectImportDestination = (selectedContentType) => {
-    setSelectedContentType(selectedContentType);
   };
 
   const getTargetModel = () => {
@@ -155,32 +203,53 @@ const HomePage = () => {
       <div className="row">
         <Block
           title="General"
-          description="Configure the Import Source & Destination"
+          description="Configure the Import Source &amp; Destination"
           style={{ marginBottom: 12 }}
         >
           <Row className={"row"}>
-            <div className={"col-4"}>
+            <div className={"col-3"}>
               <Label htmlFor="importSource">Import Source</Label>
               <Select
                 name="importSource"
                 options={importSources}
                 value={importSource}
                 onChange={({ target: { value } }) =>
-                  selectImportSource(value)
+                  setImportSource(value)
                 }
               />
             </div>
-            <div className={"col-4"}>
+            <div className={"col-3"}>
               <Label htmlFor="importDest">Import Destination</Label>
               <Select
                 value={selectedContentType}
                 name="importDest"
                 options={modelOptions}
                 onChange={({ target: { value } }) =>
-                  selectImportDestination(value)
+                  setSelectedContentType(value)
                 }
               />
             </div>
+            <div className={"col-3"}>
+              <Label htmlFor="locales">Active Locales</Label>
+              {localeOptions.map(locale => <Text key={`locale_${locale.value}`}>
+                {locale.label}
+                {locale.default && <Success fill="green"/>}
+              </Text>)}
+            </div>
+            { selectedContentType && (
+              <div className={"col-3"}>
+                <Label htmlFor="workflow">Workflow enabled {
+                  hasWorkflow ? <Success fill="green" /> : <Fail color="silver" /> 
+                }
+                </Label>
+                { hasWorkflow && 
+                  <Checkbox
+                    message="Save imported items as Draft"
+                    name="saveAsDraft"
+                    value={saveAsDraft} onChange={e => setSaveAsDraft(e.target.value)} />
+                }
+              </div>
+            )}
           </Row>
 			    <Row>
             {importSource === "upload" && (
@@ -208,13 +277,19 @@ const HomePage = () => {
         <Row className="row">
           <MappingTable
             analysis={analysis}
-            targetModel={getTargetModel()}
+            targetModel={targetModel}
             handleChange={setFieldMapping}
+            options={{
+              locales: localeOptions,
+              models,
+              saveAsDraft
+            }}
           />
           <Button
             style={{ marginTop: 12 }}
             label={"Run the Import"}
             onClick={onSaveImport}
+            isLoading={isLoading}
           />
         </Row>
       )}
@@ -222,4 +297,4 @@ const HomePage = () => {
   )
 }
 
-export default memo(HomePage)
+export default HomePage

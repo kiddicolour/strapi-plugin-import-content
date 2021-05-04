@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 
 import MappingOptions from "./MappingOptions";
 import TargetFieldSelect from "./TargetFieldSelect";
-import _ from "lodash";
 import Row from "../Row";
 import { Table } from "@buffetjs/core";
 import {
@@ -16,82 +15,155 @@ import {
   RichText as XmlIcon
 } from "@buffetjs/icons";
 
-const MappingTable = ({ analysis, targetModel, handleChange }) => {
+const MappingTable = ({ analysis, targetModel, handleChange, options }) => {
+
+  const { locales, models } = options
   const [mapping, setMapping] = useState({})
+  const fieldNameSeparator = "_"
 
-  // useEffect(() => {
-  //   strapi.notification.toggle({type: 'info', message: 'useEffect mapping ' + JSON.stringify(mapping)})
-  //   handleChange(mapping)
-  // }, [mapping])
-
-  const changeMappingOptions = (stat) => (options) => {
-    //let newMapping = _.cloneDeep(mapping)
-    // const newMapping = {
-    //   ...mapping,
-    //   ...Object.entries(options).reduce((res, v, k) => {
-    //     res[stat.fieldName][k] = v
-    //     return res
-    //   })
-    // }
-
-    const newMapping = {
+  useEffect(() => {
+    setMapping({
       ...mapping,
-      [stat.fieldName]: {
-        ...mapping[stat.fieldName],
-        options
-      }
-    }
-
-    console.log("changeMappingOptions", {
-      ...mapping,
-      [stat.fieldName]: {
-        ...mapping[stat.fieldName],
-        options
-      }
+      ...guessMappings()
     })
+  }, [analysis])
 
-    setMapping(newMapping)
-    handleChange(newMapping)
-    strapi.notification.toggle({ type: 'warning', message: 'changeMappingOptions ' + JSON.stringify(newMapping) })
-//    console.log('changeMappingOptions newMapping', newMapping)
-    // for (let key in options) {
-    //   newMapping[stat.fieldName][key] = options[key]
-    //   //_.set(newState, `mapping[${stat.fieldName}][${key}]`, options[key]);
-    // }
+  const detectFieldnameSeparator = (name) => {
+    return name.indexOf(fieldNameSeparator) > 0 ? fieldNameSeparator : false
+    // somehow this only works with 1 separator :mindblown:
+    // const separators = ["_", "-", " "]
+    // return separators.reduce(
+    //   (result, separator) => 
+    //     result = result || name.indexOf(separator) > 0 ? separator : false
+    //   , false
+    // )
+  }
 
-    // let newState = _.cloneDeep(this.state);
-    // for (let key in options) {
-    //   _.set(newState, `mapping[${stat.fieldName}][${key}]`, options[key]);
-    // }
-    //this.setState(newState, () => this.props.handleChange(this.state.mapping));
-    //setMapping(newMapping)
-    //handleChange(newMapping)
-  };
+  const getFieldNameDetails = (fieldName) => {
+    const nameParts = getFieldnameParts(fieldName)
+    const lastPart = nameParts?.length > 1 && nameParts.pop() || false
+    const baseName = lastPart ? nameParts.join(fieldNameSeparator) : null
+    if (lastPart) {
+      // find locale
+      const locale = locales.find(locale => locale.value === lastPart)
+      if (locale) {
+        return {
+          fieldName,
+          baseName,
+          locale: locale.value
+        }
+      }
+    }
+    return {
+      fieldName
+    }
+  }
 
-  const setMappingOptions = (source, targetField) => {
+  const getFieldnameParts = (name, separator) => {
+    if (!separator) {
+      separator = detectFieldnameSeparator(name)
+    }
+    if (!name || !name.length > 2 || !separator) return
+    return name.split(separator)
+  }
+
+  const guessMappings = () => {
+    if (!analysis?.fieldStats || !targetModel) {
+      return
+    }
+    const newMapping = {}
+
+    for (const stat of analysis.fieldStats) {
+      const { fieldName, baseName, locale } = getFieldNameDetails(stat.fieldName)
+
+      if (fieldName) {
+        if (!newMapping[fieldName]) {
+          newMapping[fieldName] = {}
+        }
+
+        if (baseName) {
+          if (!newMapping[fieldName]) {
+            newMapping[fieldName] = {}
+          }
+          newMapping[fieldName].targetField = baseName
+          if (locale) {
+            newMapping[fieldName].options = {
+              ...mapping[fieldName]?.options,
+              useLocale: locale
+            }
+          }
+        }
+
+        if (!baseName && Object.keys(targetModel.schema.attributes).indexOf(fieldName) >= 0) {
+          newMapping[fieldName].targetField = fieldName
+        }
+
+        // if we guessed a relational field, make sure to set the relatedModel and relationType
+        const relationType = targetModel.schema.attributes[fieldName]?.nature || false
+        const relatedModelName = relationType && targetModel.schema.attributes[fieldName]?.collection || null
+        const relatedModel = models.find(model => model.uid === targetModel.schema.attributes[fieldName]?.target) || null
+        
+        if (relatedModel) {
+          newMapping[fieldName].options = {
+            useIdentifier: "id",
+            relatedModel: relatedModel.uid,
+            relationType,
+            ...mapping[fieldName]?.options,
+          }
+
+        }
+      }
+    }
+
+    return newMapping
+  }
+  
+  const changeMappingOptions = (stat) => (options) => {
+
     const newMapping = {
       ...mapping,
-      [source]: {
-        ...mapping[source],
-        targetField
+      [stat.fieldName]: {
+        ...mapping[stat.fieldName],
+        options: {
+          ...mapping[stat.fieldName]?.options,
+          ...options
+        }
       }
     }
 
     setMapping(newMapping)
-
-    console.log("setMappingOptions", newMapping)
-
     handleChange(newMapping)
-    //handleChange(newMapping)
-    // const state = _.set(
-    //   this.state,
-    //   `mapping[${source}]['targetField']`,
-    //   targetField
-    // );
-    // this.setState(state, () => this.props.onChange(this.state.mapping));
-    //strapi.notification.toggle({type: 'warning', message: 'log ' + JSON.stringify(mapping)})
+  };
+  
+  const setMappingOptions = (source, targetField, options) => {
 
-    // console.log('setMappingOptions newMapping', newMapping);
+    // try to guess language from fieldName
+    const { fieldName, locale } = getFieldNameDetails(source)
+
+    if (fieldName) {
+      const newMapping = {
+        ...mapping,
+        [fieldName]: {
+          ...mapping[fieldName],
+          targetField,
+          options: {
+            ...mapping[fieldName]?.options,
+            ...options,
+          }
+        }
+      }
+
+      if (locale) {
+        newMapping[source].options = {
+          ...newMapping[source].options,
+          useLocale: locale,
+        }
+      }
+  
+      setMapping(newMapping)
+      handleChange(newMapping)
+    }
+
   };
 
   const CustomRow = ({ row }) => {
@@ -126,6 +198,9 @@ const MappingTable = ({ analysis, targetModel, handleChange }) => {
             targetModel={targetModel}
             stat={row}
             handleChange={changeMappingOptions(row)}
+            locales={locales}
+            options={mapping}
+            models={models}
           />
         </td>
         <td>
@@ -133,7 +208,7 @@ const MappingTable = ({ analysis, targetModel, handleChange }) => {
             <TargetFieldSelect
               targetModel={targetModel}
               value={mapping[fieldName]?.targetField}
-              handleChange={(targetField) => setMappingOptions(fieldName, targetField)}
+              handleChange={(targetField, options) => setMappingOptions(fieldName, targetField, options)}
             />
           )}
         </td>
@@ -157,7 +232,6 @@ const MappingTable = ({ analysis, targetModel, handleChange }) => {
     { name: "Destination", value: "destination" }
   ];
   const items = [...analysis.fieldStats];
-  console.log("Table items", items)
   return (
     <Table
       {...info}
@@ -166,13 +240,13 @@ const MappingTable = ({ analysis, targetModel, handleChange }) => {
       customRow={CustomRow}
     />
   );
-
 }
 
 MappingTable.propTypes = {
   analysis: PropTypes.object.isRequired,
   targetModel: PropTypes.object,
   handleChange: PropTypes.func,
+  options: PropTypes.object,
 };
 
 export default memo(MappingTable);

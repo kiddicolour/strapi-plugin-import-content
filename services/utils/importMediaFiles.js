@@ -7,6 +7,7 @@ const fetchFiles = url =>
   new Promise((resolve, reject) => {
     request({ url, method: "GET", encoding: null }, async (err, res, body) => {
       if (err) {
+        console.error(err)
         reject(err);
       }
       const mimeType = res.headers["content-type"].split(";").shift();
@@ -24,12 +25,17 @@ const storeFiles = async file => {
     .store({
       environment: strapi.config.environment,
       type: "plugin",
-      name: "upload"
+      name: "upload-local"
     })
-    .get({ key: "provider" });
-  return await strapi.plugins["upload"].services["upload"].upload(
+    .get({ key: "provider" }) || {};
+
+    const config = await strapi.plugins.upload.config
+    // console.log(config)
+    // console.log('uploqdProviderCOnfig', uploadProviderConfig)
+  return await strapi.plugins["upload"].provider.upload(
     [file],
     uploadProviderConfig
+    // config
   );
 };
 
@@ -51,12 +57,16 @@ const relateFileToContent = ({
 };
 
 const importMediaFiles = async (savedContent, sourceItem, importConfig) => {
+
   const { fieldMapping, contentType } = importConfig;
+  //console.log('importMediaFiles fieldMapping', fieldMapping, 'contentType', contentType)
   const uploadedFileDescriptors = _.mapValues(
     fieldMapping,
     async (mapping, sourceField) => {
-      if (mapping.importMediaToField) {
+      //console.log('mapping of sourcefield', mapping, sourceField)
+      if (mapping.options && mapping.options.importMediaToField) {
         const urls = getMediaUrlsFromFieldData(sourceItem[sourceField]);
+        // console.log(urls)
         const fetchPromises = _.uniq(urls).map(fetchFiles);
         const fileBuffers = await Promise.all(fetchPromises);
         const relatedContents = fileBuffers.map(fileBuffer =>

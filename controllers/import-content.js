@@ -16,7 +16,7 @@ module.exports = {
 
   index: async ctx => {
     const entries = await strapi.query("import-config", "import-content").find();
-    console.log("entries", entries)
+    // console.log("entries", entries)
     const withCounts = entries.map(entry => ({
       ...entry,
       importedCount: entry.importedItems.length,
@@ -50,7 +50,7 @@ module.exports = {
     const record = await strapi
       .query("import-config", "import-content")
       .create(importConfig);
-    console.log("create", record);
+    // console.log("create", record);
     await services["import-content"].importItems(record, ctx);
     ctx.send(record);
   },
