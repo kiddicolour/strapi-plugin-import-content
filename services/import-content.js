@@ -6,11 +6,11 @@
  * @description: A set of functions similar to controller's actions to avoid code duplication.
  */
 
-const { resolveDataFromRequest, getItemsFromData } = require("./utils/utils");
+const { resolveDataFromRequest, getItemsFromData, addParams } = require("./utils/utils");
 const analyzer = require("./utils/analyzer");
 const _ = require("lodash");
 const importFields = require("./utils/importFields");
-const importMediaFiles = require("./utils/importMediaFiles");
+// const importMediaFiles = require("./utils/importMediaFiles");
 
 const import_queue = {};
 
@@ -42,77 +42,129 @@ const importNextItem = async importConfig => {
     return;
   }
 
-  /**
-   * When importing localized fields having multiple languages per row,
-   * we need to do multiple creations for a single record (one for each language)
-   * passing the id of the first created record to the localized ones
-   * 
-   * Strapi needs the id of the initial record to add translations 
-   * as the creation procedure accepts only a single language at a time
-   * Therefor the importFields function will return a sorted array
-   * if multiple translations of the same record need to be created.
-   * Once the first record is created, we need to provide the id for the localized versions
-   */
+  const { fieldMapping, options } = importConfig
+  const { update } = options
+
+  // since we can either create or update records, use a variable early as there's
+  // multiple scenarios where none pr either of the 2 are possible
+  const operations = [ 'create', 'update']
+  let operation
+
+
+  // When importing localized fields having multiple languages per row,
+  // we need to do multiple creations for a single record (one for each language)
+  // passing the id of the first created record to the localized ones
+  // the first record will always be the base record
+
   try {
     const importedItems = await importFields(
       sourceItem,
-      importConfig.fieldMapping,
-      importConfig.options
+      fieldMapping,
+      options
     );
 
     console.log('importedItems ########## ', importedItems)
+
+    const { ignoreMissing, sourceField, targetField } = update
     const savedContents = [];
-    let id;
+    let id, savedContent, existing;
 
     for (const importedItem of importedItems) {
 
+      if (!importedItem) { continue }
+
+      // set id if previous record had it and current record has an empty id property
       if (id && importedItem.id === null) {
         importedItem.id = id
       }
 
-      console.log("Importing item ", importedItem.id)
+      // console.log("Validating imported item:", importedItem)
 
-      const savedContent = await strapi
-        .query(importConfig.contentType)
-        .create(importedItem);
+      // to update or to insert, that is the question
+      if (update) {
+        // try to fetch record by targetField
+        existing = await strapi.query(importConfig.contentType).findOne(
+          addParams({[targetField]: sourceItem[sourceField]}, importedItem.locale)
+        )
 
-        // only store id of first record, dumb-ass
-        if (!id) {
-          id = savedContent.id
+        if (existing) {
+          console.log(`Found existing for ${targetField}: ${sourceItem[sourceField]}`, existing.id)
+          operation = 'update'
+        } else {
+          if (!ignoreMissing) {
+            operation = 'create'
+          }
+        }
+      } else {
+        operation = 'create'
+      }
+
+      if (operation && operations.indexOf(operation) !== -1) {
+
+        switch (operation) {
+          case 'create':
+            savedContent = await strapi
+              .query(importConfig.contentType)
+              .create(importedItem);
+
+              // only store id of first created record
+              if (!id) {
+                id = savedContent.id
+              }
+          break
+
+          case 'update':
+            if (!existing) { console.error("Update without existing, how??", importedItem) }
+            savedContent = await strapi
+              .query(importConfig.contentType)
+              .update({ id: existing.id}, importedItem)
+          break
         }
 
-      const uploadedFiles = await importMediaFiles(
-        savedContent,
-        sourceItem,
-        importConfig
-      );
-      const fileIds = _.map(_.flatten(uploadedFiles), "id");
-      await strapi.query("imported-item", "import-content").create({
-        importconfig: importConfig.id,
-        ContentId: savedContent.id,
-        ContentType: importConfig.contentType,
-        importedFiles: { fileIds }
-      });      
+        // @TODO fix media import
 
-      savedContents.push(savedContent)
+        // skip file import as I still fail to get this working as expected
+        // pbbly related to the user auth not being passed on from this service
+
+        // const uploadedFiles = await importMediaFiles(
+        //   savedContent,
+        //   sourceItem,
+        //   importConfig
+        // );
+
+        // const fileIds = _.map(_.flatten(uploadedFiles), "id");
+        await strapi.query("imported-item", "import-content").create({
+          importconfig: importConfig.id,
+          ContentId: savedContent.id,
+          ContentType: importConfig.contentType,
+          // importedFiles: { fileIds }
+        });
+
+        savedContents.push(savedContent)
+
+        // garbage collection
+        savedContent = null
+        operation = null
+        existing = null
+      }
 
     }
 
+    // link each translation with all other translations
+    // n languages => 2*pow(n-1) links needed :mindblown: :okzoomer:
+    // so we need to run a new query for each language :worksforme:
 
-    // now to link all translations with the original and back
-    // n languages => (n-1)squared links needed :mindblown:
-    // so we need to run a new query for each language, hooray
     for (const content of savedContents) {
       const localizations = buildLocalizationsArray(savedContents, content)
       if (localizations) {
-        const result = await strapi.query(importConfig.contentType)
+        await strapi.query(importConfig.contentType)
         .update({id: content.id}, {localizations: localizations});
         // console.log('UpdatedLocalization ', localizations, 'result', result)
       }
     }
 
   } catch (e) {
-    console.log(e);
+    console.warn('Error durign import!', `${e}`);
   }
   const { IMPORT_THROTTLE } = strapi.plugins["import-content"].config;
   setTimeout(() => importNextItem(importConfig), IMPORT_THROTTLE);

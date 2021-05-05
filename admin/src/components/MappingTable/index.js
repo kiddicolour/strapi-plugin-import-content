@@ -15,7 +15,7 @@ import {
   RichText as XmlIcon
 } from "@buffetjs/icons";
 
-const MappingTable = ({ analysis, targetModel, handleChange, options }) => {
+const MappingTable = ({ analysis, targetModel, handleChange, options, targetField, sourceField }) => {
 
   const { locales, models } = options
   const [mapping, setMapping] = useState({})
@@ -207,7 +207,8 @@ const MappingTable = ({ analysis, targetModel, handleChange, options }) => {
           {targetModel && (
             <TargetFieldSelect
               targetModel={targetModel}
-              value={mapping[fieldName]?.targetField}
+              name={`${fieldName}TargetField`}
+              value={mapping[fieldName]?.targetField || (sourceField == fieldName && targetField)}
               handleChange={(targetField, options) => setMappingOptions(fieldName, targetField, options)}
             />
           )}
@@ -247,6 +248,8 @@ MappingTable.propTypes = {
   targetModel: PropTypes.object,
   handleChange: PropTypes.func,
   options: PropTypes.object,
+  targetField: PropTypes.string,
+  sourceField: PropTypes.string,
 };
 
 export default memo(MappingTable);

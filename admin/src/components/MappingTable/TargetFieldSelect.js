@@ -2,8 +2,6 @@ import React, { memo, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
 import { Select } from "@buffetjs/core";
-import { get } from "lodash";
-import { StrapiProvider } from 'strapi-helper-plugin';
 
 const TargetFieldSelect = ({ handleChange, targetModel, value, name }) => {
 
@@ -75,10 +73,10 @@ const TargetFieldSelect = ({ handleChange, targetModel, value, name }) => {
 }
 
 TargetFieldSelect.propTypes = {
+  name: PropTypes.string.isRequired,
   targetModel: PropTypes.object,
   handleChange: PropTypes.func,
   value: PropTypes.string,
-  name: PropTypes.string,
 };
 
 export default memo(TargetFieldSelect);

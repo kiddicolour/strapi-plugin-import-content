@@ -107,10 +107,26 @@ const urlIsMedia = url => {
   }
 };
 
+const addParams = (fields, locale, draft) => {
+  const options = {}
+  if (locale) {
+    Object.assign(options, {
+      locale: locale
+    })
+  }
+  if (draft) {
+    Object.assign(options, {
+      published_at: null
+    })
+  }
+  return { ...fields, ...options }
+}
+
 module.exports = {
   resolveDataFromRequest,
   getItemsFromData,
   getDataFromUrl,
   stringIsEmail,
-  urlIsMedia
+  urlIsMedia,
+  addParams
 };

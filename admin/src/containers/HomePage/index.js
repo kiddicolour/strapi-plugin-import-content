@@ -14,7 +14,7 @@ import {
   PluginHeader,
   request
 } from "strapi-helper-plugin";
-import { Button, Checkbox, Select, Text, Label } from "@buffetjs/core";
+import { Button, Checkbox, Flex, Select, Text, Label, Toggle } from "@buffetjs/core";
 import { Fail, Success } from "@buffetjs/icons"
 import { get, has, isEmpty, pickBy, set } from "lodash";
 
@@ -24,6 +24,8 @@ import UploadFileForm from "../../components/UploadFileForm";
 import ExternalUrlForm from "../../components/ExternalUrlForm";
 import RawInputForm from "../../components/RawInputForm";
 import MappingTable from "../../components/MappingTable";
+import SourceFieldSelect from "../../components/MappingTable/SourceFieldSelect";
+import TargetFieldSelect from "../../components/MappingTable/TargetFieldSelect";
 
 const getUrl = (to) =>
   to ? `/plugins/${pluginId}/${to}` : `/plugins/${pluginId}`;
@@ -53,6 +55,11 @@ const HomePage = () => {
   const [analysisConfig, setAnalysisConfig] = useState({})
   const [selectedContentType, setSelectedContentType] = useState("")
   const [fieldMapping, setFieldMapping] = useState({})
+  const [insertOrUpdate, setInsertOrUpdate] = useState(false)
+  const [sourceField, setSourceField] = useState()
+  const [targetField, setTargetField] = useState()
+  const [ignoreMissing, setIgnoreMissing] = useState(true)
+
 
   useEffect(() => {
     getModels().then(res => {
@@ -90,7 +97,7 @@ const HomePage = () => {
       ...analysisConfig,
       contentType: selectedContentType,
       fieldMapping,
-      options: { saveAsDraft, locales: localeOptions }
+      options: { saveAsDraft, locales: localeOptions, update: insertOrUpdate ? { sourceField, targetField, ignoreMissing } : false }
     };
     // console.log("onSaveImport config", importConfig)
     try {
@@ -182,10 +189,10 @@ const HomePage = () => {
   };
 
   return (
-    <div className={"container-fluid"} style={{ padding: "18px 30px" }}>
+    <div className="container-fluid" style={{ padding: "18px 30px" }}>
       <PluginHeader
-        title={"Import Content"}
-        description={"Import CSV and RSS-Feed into your Content Types"}
+        title="Import Content"
+        description="Import CSV and RSS-Feed into your Content Types"
       />
       <HeaderNav
         links={[
@@ -206,8 +213,8 @@ const HomePage = () => {
           description="Configure the Import Source &amp; Destination"
           style={{ marginBottom: 12 }}
         >
-          <Row className={"row"}>
-            <div className={"col-3"}>
+          <Row className="row">
+            <div className="col-3">
               <Label htmlFor="importSource">Import Source</Label>
               <Select
                 name="importSource"
@@ -218,7 +225,7 @@ const HomePage = () => {
                 }
               />
             </div>
-            <div className={"col-3"}>
+            <div className="col-3">
               <Label htmlFor="importDest">Import Destination</Label>
               <Select
                 value={selectedContentType}
@@ -229,7 +236,7 @@ const HomePage = () => {
                 }
               />
             </div>
-            <div className={"col-3"}>
+            <div className="col-3">
               <Label htmlFor="locales">Active Locales</Label>
               {localeOptions.map(locale => <Text key={`locale_${locale.value}`}>
                 {locale.label}
@@ -237,7 +244,7 @@ const HomePage = () => {
               </Text>)}
             </div>
             { selectedContentType && (
-              <div className={"col-3"}>
+              <div className="col-3">
                 <Label htmlFor="workflow">Workflow enabled {
                   hasWorkflow ? <Success fill="green" /> : <Fail color="silver" /> 
                 }
@@ -250,7 +257,62 @@ const HomePage = () => {
                 }
               </div>
             )}
-          </Row>
+            </Row>
+            { targetModel && (
+            <Row className="row">
+              <div className="col-3">
+                <Label htmlFor="insertOrUpdate" message="Update records if possible" />
+                <Toggle
+                  name="insertOrUpdate"
+                  value={insertOrUpdate}
+                  onChange={e => setInsertOrUpdate(!!e.target.value)}
+                />
+              </div>
+              {insertOrUpdate && (
+                <>
+                  { !analysis && (
+                    <Text>Run the analysis first to set update mapping</Text>)
+                  }
+                  {analysis && (
+                    <>
+                      <div className="col-3">
+                        <Label htmlFor="updateIgnoreMissing" message="Ignore records not found in import file" />
+                        <Toggle
+                          name="updateIgnoreMissing"
+                          value={ignoreMissing}
+                          onChange={e => setIgnoreMissing(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-3">
+                        <Label htmlFor="updateSourceField" message="Imported field value to search for" />
+                        <Flex alignItems="center">
+                          <SourceFieldSelect
+                            name="updateSourceField"
+                            value={sourceField}
+                            analysis={analysis}
+                            handleChange={updateSourceField => setSourceField(updateSourceField)}
+                          />
+                          { (!sourceField || sourceField === "none") && <Fail style={{marginLeft: '1em'}}/> }
+                        </Flex>
+                      </div>
+                      <div className="col-3">
+                        <Label htmlFor="updateTargetField" message="Target field name to search by" />
+                        <Flex alignItems="center">
+                          <TargetFieldSelect
+                            name="updateTargetField"
+                            value={targetField}
+                            targetModel={targetModel}
+                            handleChange={updateTargetField => setTargetField(updateTargetField)}
+                          />
+                          { (!targetField || targetField === "none") && <Fail style={{marginLeft: '1em'}} /> }
+                        </Flex>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </Row>
+          )}
 			    <Row>
             {importSource === "upload" && (
               <UploadFileForm
@@ -276,8 +338,7 @@ const HomePage = () => {
       {analysis && (
         <Row className="row">
           <MappingTable
-            analysis={analysis}
-            targetModel={targetModel}
+            {...{   analysis, targetModel, sourceField, targetField }}
             handleChange={setFieldMapping}
             options={{
               locales: localeOptions,
@@ -287,7 +348,7 @@ const HomePage = () => {
           />
           <Button
             style={{ marginTop: 12 }}
-            label={"Run the Import"}
+            label="Run the Import"
             onClick={onSaveImport}
             isLoading={isLoading}
           />

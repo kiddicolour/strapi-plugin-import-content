@@ -1,5 +1,6 @@
 const { replace } = require("lodash");
 const striptags = require("striptags");
+const { addParams } = require("./utils");
 
 /**
  * importFields
@@ -13,12 +14,12 @@ const striptags = require("striptags");
  */
 const importFields = async (sourceItem, fieldMapping, options) => {
 
-  const { locales, saveAsDraft } = options || {}
+  const { locales, saveAsDraft, update } = options || {}
   const defaultLocale = locales && locales.filter(locale => locale.default).pop().value
   const importedItems = [];
   const importLocales = getLocales(fieldMapping, defaultLocale)
 
-  // console.log('importFields with sourceItem', sourceItem, 'fieldMapping', fieldMapping, 'locales', locales, 'importLocales', importLocales, 'defaultLocale', defaultLocale)
+  // console.log('importFields with sourceItem', sourceItem, 'fieldMapping', fieldMapping, 'options', options)
 
   const baseRecord = await importAllFields(sourceItem, fieldMapping, defaultLocale, saveAsDraft)
   // console.log('baseRecord', baseRecord)
@@ -113,20 +114,7 @@ const importLocalizedFields = async (sourceItem, fieldMapping, locale, saveAsDra
 
 }
 
-const addParams = (fields, locale, draft) => {
-  const options = {}
-  if (locale) {
-    Object.assign(options, {
-      locale: locale
-    })
-  }
-  if (draft) {
-    Object.assign(options, {
-      published_at: null
-    })
-  }
-  return { ...fields, ...options }
-}
+
 
 const processRelation = async (item, field, options) => {
   const { 
