@@ -22,10 +22,12 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, targetFiel
   const fieldNameSeparator = "_"
 
   useEffect(() => {
-    setMapping({
+    const newMapping = {
       ...mapping,
       ...guessMappings()
-    })
+    }
+    setMapping(newMapping)
+    handleChange(newMapping)
   }, [analysis])
 
   const detectFieldnameSeparator = (name) => {
