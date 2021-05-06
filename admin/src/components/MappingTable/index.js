@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
 import MappingOptions from "./MappingOptions";
@@ -15,10 +15,11 @@ import {
   RichText as XmlIcon
 } from "@buffetjs/icons";
 
-const MappingTable = ({ analysis, targetModel, handleChange, options, targetField, sourceField }) => {
+const MappingTable = ({ analysis, targetModel, handleChange, options, updateTargetField, updateSourceField }) => {
 
   const { locales, models } = options
   const [mapping, setMapping] = useState({})
+  const [currentField, setCurrentField] = useState()
   const fieldNameSeparator = "_"
 
   useEffect(() => {
@@ -139,6 +140,8 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, targetFiel
   
   const setMappingOptions = (source, targetField, options) => {
 
+    console.log(`setMappingOptions for ${source} -> ${targetField} with options`, options)
+
     // try to guess language from fieldName
     const { fieldName, locale } = getFieldNameDetails(source)
 
@@ -147,7 +150,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, targetFiel
         ...mapping,
         [fieldName]: {
           ...mapping[fieldName],
-          targetField,
+          targetField: targetField || mapping[fieldName]?.targetField,
           options: {
             ...mapping[fieldName]?.options,
             ...options,
@@ -164,15 +167,18 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, targetFiel
   
       setMapping(newMapping)
       handleChange(newMapping)
+
+      inputRef.current.focus()
     }
 
   };
 
   const CustomRow = ({ row }) => {
     const { fieldName, count, format, minLength, maxLength, meanLength } = row;
-
+    const active = currentField === fieldName
+    const targetField = mapping[fieldName]?.targetField
     return (
-      <tr style={{ paddingTop: 18 }}>
+      <tr onClick={() => setCurrentField(fieldName)} key={`row_${fieldName}`} style={{ paddingTop: 18 }}>
         <td>{fieldName}</td>
         <td>
           <p>{count}</p>
@@ -196,22 +202,27 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, targetFiel
           <p>{meanLength}</p>
         </td>
         <td>
-          <MappingOptions
-            targetModel={targetModel}
-            stat={row}
-            handleChange={changeMappingOptions(row)}
-            locales={locales}
-            options={mapping}
-            models={models}
-          />
+          { targetField && (
+            <MappingOptions
+              targetModel={targetModel}
+              targetField={targetField}
+              active={active}
+              stat={row}
+              handleFocus={(field => setCurrentField(field))}
+              handleChange={(options) => setMappingOptions(fieldName, targetField, options) || true}
+              locales={locales}
+              mapping={mapping[fieldName]}
+              models={models}
+            />
+          )}
         </td>
         <td>
           {targetModel && (
             <TargetFieldSelect
               targetModel={targetModel}
               name={`${fieldName}TargetField`}
-              value={mapping[fieldName]?.targetField || (sourceField == fieldName && targetField)}
-              handleChange={(targetField, options) => setMappingOptions(fieldName, targetField, options)}
+              value={targetField || (updateSourceField == fieldName && updateTargetField) || ''}
+              handleChange={(field, options) => setMappingOptions(fieldName, field, options)}
             />
           )}
         </td>

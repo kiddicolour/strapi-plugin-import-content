@@ -13,7 +13,7 @@ function niceHash(buffer) {
 }
 
 const fileFromBuffer = (mimeType, extension, buffer) => {
-  // console.log('fileFromBuffer mime', mimeType, 'extensions', extension)
+  console.log('fileFromBuffer mime', mimeType, 'extensions', extension)
   const fid = uuid();
   return {
     buffer,

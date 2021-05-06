@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import { Select } from "@buffetjs/core";
 
-const LocaleSelect = ({ handleChange, locales, value }) => {
+const LocaleSelect = ({ handleChange, locales, name, value }) => {
 
   // const [selectedLocale, setSelectedLocale] = useState("en")
 
@@ -28,7 +28,7 @@ const LocaleSelect = ({ handleChange, locales, value }) => {
     handleChange(value);
   }
 
-  const defaultLocale = locales.filter(locale => locale.default).pop()
+  const defaultLocale = locales.find(locale => locale.default)
 
   const fillOptions = () => {
     const options = locales.map(locale => {
@@ -42,7 +42,7 @@ const LocaleSelect = ({ handleChange, locales, value }) => {
 
   return (
     <Select
-      name={"locale"}
+      name={name}
       value={value || defaultLocale.value}
       options={fillOptions()}
       onChange={handleChanges}
@@ -51,6 +51,7 @@ const LocaleSelect = ({ handleChange, locales, value }) => {
 }
 
 LocaleSelect.propTypes = {
+  name: PropTypes.string.isRequired,
   locales: PropTypes.array,
   handleChange: PropTypes.func,
   value: PropTypes.string,

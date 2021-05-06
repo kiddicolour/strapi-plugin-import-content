@@ -10,7 +10,7 @@ const { resolveDataFromRequest, getItemsFromData, addParams } = require("./utils
 const analyzer = require("./utils/analyzer");
 const _ = require("lodash");
 const importFields = require("./utils/importFields");
-// const importMediaFiles = require("./utils/importMediaFiles");
+const importMediaFiles = require("./utils/importMediaFiles");
 
 const import_queue = {};
 
@@ -121,10 +121,30 @@ const importNextItem = async importConfig => {
           break
         }
 
-        // @TODO fix media import
+        if (savedContent.id) {
 
-        // skip file import as I still fail to get this working as expected
-        // pbbly related to the user auth not being passed on from this service
+          console.log('Got savedContent', savedContent.id)
+          const uploadedFiles = await importMediaFiles(
+            savedContent,
+            sourceItem,
+            importConfig
+          );
+          console.log('uploadedFiles', uploadedFiles)
+          const fileIds = _.map(_.flatten(uploadedFiles), "id");
+          await strapi.query("imported-item", "import-content").create({
+            importconfig: importConfig.id,
+            ContentId: savedContent.id,
+            ContentType: importConfig.contentType,
+            importedFiles: { fileIds }
+          });
+  
+          savedContents.push(savedContent)
+        }
+
+        // // @TODO fix media import
+
+        // // skip file import as I still fail to get this working as expected
+        // // pbbly related to the user auth not being passed on from this service
 
         // const uploadedFiles = await importMediaFiles(
         //   savedContent,
@@ -133,14 +153,14 @@ const importNextItem = async importConfig => {
         // );
 
         // const fileIds = _.map(_.flatten(uploadedFiles), "id");
-        await strapi.query("imported-item", "import-content").create({
-          importconfig: importConfig.id,
-          ContentId: savedContent.id,
-          ContentType: importConfig.contentType,
-          // importedFiles: { fileIds }
-        });
+        // await strapi.query("imported-item", "import-content").create({
+        //   importconfig: importConfig.id,
+        //   ContentId: savedContent.id,
+        //   ContentType: importConfig.contentType,
+        //   // importedFiles: { fileIds }
+        // });
 
-        savedContents.push(savedContent)
+        // savedContents.push(savedContent)
 
         // garbage collection
         savedContent = null

@@ -7,7 +7,7 @@ const fetchFiles = url =>
   new Promise((resolve, reject) => {
     request({ url, method: "GET", encoding: null }, async (err, res, body) => {
       if (err) {
-        console.error(err)
+        console.error(`rejected fetchFile with error: ${err}`)
         reject(err);
       }
       const mimeType = res.headers["content-type"].split(";").shift();
@@ -19,32 +19,26 @@ const fetchFiles = url =>
       resolve(fileFromBuffer(mimeType, extension, body));
     });
   });
-
 const storeFiles = async file => {
   const uploadProviderConfig = await strapi
     .store({
       environment: strapi.config.environment,
       type: "plugin",
-      name: "upload-local"
+      name: "upload"
     })
-    .get({ key: "provider" }) || {};
-
-    const config = await strapi.plugins.upload.config
-    // console.log(config)
-    // console.log('uploqdProviderCOnfig', uploadProviderConfig)
-  return await strapi.plugins["upload"].provider.upload(
+    .get({ key: "provider" });
+  return await strapi.plugins["upload"].services["upload"].upload(
     [file],
     uploadProviderConfig
-    // config
   );
 };
-
 const relateFileToContent = ({
   contentType,
   contentId,
   targetField,
   fileBuffer
 }) => {
+  console.log('Added related info to fileBuffer', fileBuffer.related)
   fileBuffer.related = [
     {
       refId: contentId,
@@ -55,20 +49,16 @@ const relateFileToContent = ({
   ];
   return fileBuffer;
 };
-
 const importMediaFiles = async (savedContent, sourceItem, importConfig) => {
-
   const { fieldMapping, contentType } = importConfig;
-  //console.log('importMediaFiles fieldMapping', fieldMapping, 'contentType', contentType)
   const uploadedFileDescriptors = _.mapValues(
     fieldMapping,
     async (mapping, sourceField) => {
-      //console.log('mapping of sourcefield', mapping, sourceField)
-      if (mapping.options && mapping.options.importMediaToField) {
+      if (mapping.importMediaToField) {
         const urls = getMediaUrlsFromFieldData(sourceItem[sourceField]);
-        // console.log(urls)
         const fetchPromises = _.uniq(urls).map(fetchFiles);
         const fileBuffers = await Promise.all(fetchPromises);
+        console.log('fileBuffers', fileBuffers)
         const relatedContents = fileBuffers.map(fileBuffer =>
           relateFileToContent({
             contentType,
@@ -77,8 +67,10 @@ const importMediaFiles = async (savedContent, sourceItem, importConfig) => {
             fileBuffer
           })
         );
+        console.log('relatedContents', relatedContents)
         const storePromises = relatedContents.map(storeFiles);
         const storedFiles = await Promise.all(storePromises);
+        console.log('storedFiles', storedFiles)
         console.log(_.flatten(storedFiles));
         return storedFiles;
       }
@@ -86,5 +78,4 @@ const importMediaFiles = async (savedContent, sourceItem, importConfig) => {
   );
   return await Promise.all(_.values(uploadedFileDescriptors));
 };
-
 module.exports = importMediaFiles;

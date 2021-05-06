@@ -15,7 +15,7 @@ import {
   request
 } from "strapi-helper-plugin";
 import { Button, Checkbox, Flex, Select, Text, Label, Toggle } from "@buffetjs/core";
-import { Fail, Success } from "@buffetjs/icons"
+import { Fail, Globe, Success } from "@buffetjs/icons"
 import { get, has, isEmpty, pickBy, set } from "lodash";
 
 import Row from "../../components/Row";
@@ -239,8 +239,9 @@ const HomePage = () => {
             <div className="col-3">
               <Label htmlFor="locales">Active Locales</Label>
               {localeOptions.map(locale => <Text key={`locale_${locale.value}`}>
+                <Globe fill={locale.default ? 'green' : 'silver'} style={{ width: '2rem'}}/>
                 {locale.label}
-                {locale.default && <Success fill="green"/>}
+                {locale.default && <Success />}
               </Text>)}
             </div>
             { selectedContentType && (

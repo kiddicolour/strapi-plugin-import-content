@@ -202,7 +202,7 @@ const processField = async (sourceItem, sourceField, stripTags, toMarkdown, pars
     result = parseUrls && replaceurls(result, locale) || result
     console.log('toMarkdown or parseUrls on', parseUrls), result
   } else {
-    result = stripTags && striptags(results) || result
+    result = stripTags && striptags(results, ['a', 'ul', 'li', 'em', 'strong', 'b', 'i']) || result
   }
 
   return result
