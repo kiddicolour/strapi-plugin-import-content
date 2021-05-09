@@ -51,7 +51,20 @@ Validate dates and set created_at and updated_at timestamps of imported records.
 If the Draft / Publish feature is enabled, adds the updated_at column as well
 
 ## Requirements
+### Strapi permissions
+Allow public access to the following endpoints
+- this plugins endpoints - all ot them
+- any custom content type's `find` endpoint
+- content-type-builder / getcontenttypes
+- i18n / listlocales
+- upload / upload
+
+### Relation import
 For this to work, the Content Type needs to have an extra column to hold any external id,
+
+### Media import
+Is currently broken as there's no way to stream a file directly into Strapi.  See https://github.com/4levels/strapi/commit/4ed25fbdf1d1c2e26bc127c02dc95fd87488814c
+
 
 ## Caveats - dragons
 This code is only tested running locally using Strapi and online using Platform.sh in a 
