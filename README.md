@@ -4,7 +4,7 @@ A quick description of import-content.
 
 
 # HERE BE DRAGONS
-_This repo is far from production ready, but works optimiscally_
+_This repo is far from production ready, but works optimistically_
 
 Import data into Strapi, as seen on the Strapi Community Blog Posts (4 in total)
 https://strapi.io/blog/how-to-create-an-import-content-plugin-part-1-4
