@@ -1,5 +1,5 @@
-const crypto = require('crypto')
-
+const crypto = require('crypto');
+const path = require('path');
 const uuid = require("uuid/v4");
 
 function niceHash(buffer) {
@@ -13,15 +13,16 @@ function niceHash(buffer) {
 }
 
 const fileFromBuffer = (mimeType, extension, buffer) => {
-  console.log('fileFromBuffer mime', mimeType, 'extensions', extension)
+  // console.log('fileFromBuffer mime', mimeType, 'extension', extension)
   const fid = uuid();
   return {
     buffer,
+    // path: path.join(strapi.config.appPath, strapi.config.paths.static, 'uploads', `${fid}.${extension}`),
     sha256: niceHash(buffer),
     hash: fid.replace(/-/g, ""),
     name: `${fid}.${extension}`,
     ext: `.${extension}`,
-    mime: mimeType,
+    type: mimeType,
     size: (buffer.length / 1000).toFixed(2)
   };
 };

@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import P from "../P";
 import Label from "../Label";
 import Row from "../Row";
-import { Button } from "@buffetjs/core";
+import { Button, Flex } from "@buffetjs/core";
 
 const UploadFileForm = (props) => {
   const [file, setFile] = useState();
@@ -51,6 +51,8 @@ const UploadFileForm = (props) => {
         data
       });
   };
+
+  const { filename } = options
 
   return (
     <div className={"col-12"}>
@@ -144,12 +146,18 @@ const UploadFileForm = (props) => {
         </Label>
       </Row>
       <Row className={"row"}>
-        <Button
-          label={"Analyze"}
-          color={file ? "secondary" : "cancel"}
-          disabled={!file}
-          onClick={clickAnalyzeUploadFile}
-        />
+          <Button
+            style={{width: '100%'}}
+            label={"Analyze"}
+            color={file ? "secondary" : "cancel"}
+            disabled={!file}
+            onClick={clickAnalyzeUploadFile}
+          />
+        {
+          filename && <P style={{width: '100%'}}>
+            Current loaded filename: {filename}
+          </P>
+        }
 	    </Row>
     </div>
   )

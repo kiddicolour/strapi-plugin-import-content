@@ -46,25 +46,24 @@ const importAllFields = async (sourceItem, fieldMapping, defaultLocale, saveAsDr
 
   // console.log('importAllfields', fieldMapping)
   for (const sourceField of Object.keys(fieldMapping)) {
-    const { targetField, options } = fieldMapping[sourceField];
-    const { useLocale, relatedModel, parseUrls, toMarkdown, stripTags } = options || {};
+    const { targetField, useLocale, relatedModel, parseUrls, toMarkdown, stripTags } = fieldMapping[sourceField];
     // console.log(`field: ${sourceField}, target: ${targetField}`, options)
     if (!targetField || targetField === "none") {
       continue;
     }
-    
+
     if (relatedModel) {
       // console.log('foundRelatedModel', relatedModel, sourceItem, sourceField, 'with options', options)
-      importedItem[targetField] = await processRelation(sourceItem, sourceField, {...options, useLocale: options && options.useLocale || defaultLocale})
+      importedItem[targetField] = await processRelation(sourceItem, sourceField, { ...fieldMapping[sourceField], useLocale: useLocale || defaultLocale })
     } else {
       // console.log(`no related model, useLocale: ${useLocale}, defaultLocale: ${defaultLocale} `, targetField, 'options', options, 'relatedModel', relatedModel)
       if (!useLocale || (defaultLocale && useLocale == defaultLocale)) {
-          importedItem[targetField] = await processField(sourceItem, sourceField, stripTags, toMarkdown, parseUrls, options && options.useLocale || defaultLocale)
+        importedItem[targetField] = await processField(sourceItem, sourceField, stripTags, toMarkdown, parseUrls, useLocale || defaultLocale)
       }
     }
 
     // console.log('importAllFields targetField:', targetField, 'options', options, 'relatedModel', relatedModel)
-    
+
   };
 
   // if saveAsDraft is enabled, clear published__publicationState: "preview"
@@ -82,15 +81,14 @@ const importLocalizedFields = async (sourceItem, fieldMapping, locale, saveAsDra
   const importedItem = { id: null }
 
   for (const sourceField of Object.keys(fieldMapping)) {
-    const { targetField, options } = fieldMapping[sourceField];
-    const { useLocale, relatedModel, toMarkdown, parseUrls, stripTags } = options || {};
+    const { targetField, useLocale, relatedModel, toMarkdown, parseUrls, stripTags } = fieldMapping[sourceField];
     // console.log('process localized fiueld ', sourceField, 'useLocale', useLocale, 'targetField', targetField)
     if (!targetField || targetField === "none") {
       continue
     }
 
     if (relatedModel) {
-      importedItem[targetField] = await processRelation(sourceItem, sourceField, {...options, useLocale: options && options.useLocale || locale, saveAsDraft})
+      importedItem[targetField] = await processRelation(sourceItem, sourceField, { ...fieldMapping[sourceField], useLocale: useLocale || locale, saveAsDraft })
       // console.log(`importLocalized relation result for `, importedItem[targetField], 'with options', {...options, useLocale: options.useLocale || locale})
     } else {
       if (useLocale && useLocale === locale) {
@@ -117,24 +115,24 @@ const importLocalizedFields = async (sourceItem, fieldMapping, locale, saveAsDra
 
 
 const processRelation = async (item, field, options) => {
-  const { 
-    relatedModel, 
-    relationType, 
-    useSeparator = " ", 
-    useLocale, 
-    useIdentifier = "id", 
-    createMissing = false, 
-    saveAsDraft 
+  const {
+    relatedModel,
+    relationType,
+    useSeparator = " ",
+    useLocale,
+    useIdentifier = "id",
+    createMissing = false,
+    saveAsDraft
   } = options || {};
-  
+
   let params = {}
   const toOne = relationType && relationType.indexOf("ToOne") > 2
-  
+
   // console.log('related options', options)
 
   // treat single relation type differently
   if (toOne) {
-    params = addParams({[useIdentifier]: item[field]}, useLocale)
+    params = addParams({ [useIdentifier]: item[field] }, useLocale)
     const relatedRecord = await strapi.query(relatedModel).findOne(params)
     // console.log('fetch toOne with params', params, 'with result', relatedRecord && relatedRecord.id || "none")
     if (relatedRecord) {
@@ -142,9 +140,9 @@ const processRelation = async (item, field, options) => {
     }
     // no creation of single relation types, sort your import files up front as workaround
   }
-  
+
   const values = item[field].split(useSeparator)
-  params = addParams({[useIdentifier]: values}, useLocale)
+  params = addParams({ [useIdentifier]: values }, useLocale)
   const relatedRecords = await strapi.query(relatedModel).find(params)
   // console.log('fetch toMany with params', params, 'with many results: ', relatedRecords && relatedRecords.length || "none")
 
@@ -153,7 +151,7 @@ const processRelation = async (item, field, options) => {
   if (relatedRecords.length === values.length) {
     return relatedRecords.map(record => record.id)
   }
-  
+
   // now the tricky part: if one or more records is missing and createMissing is true,
   // we have to create the missing records, and only the missing records
   if (createMissing) {
@@ -179,7 +177,7 @@ const processRelation = async (item, field, options) => {
         // create record and use id
 
         // console.log(`Creating new ${relatedModel} with ${useIdentifier}: ${value}`)
-        params = addParams({[useIdentifier]: value}, useLocale, saveAsDraft)
+        params = addParams({ [useIdentifier]: value }, useLocale, saveAsDraft)
         const result = await strapi.query(relatedModel).create(params)
         relatedIds.push(result.id)
       }
@@ -213,7 +211,7 @@ const processField = async (sourceItem, sourceField, stripTags, toMarkdown, pars
 
 const getLocales = (fieldMapping, defaultLocale) => {
   const locales = [];
-  Object.values(fieldMapping).forEach(({options}) => {
+  Object.values(fieldMapping).forEach(({ options }) => {
     locales.push(options && (!defaultLocale || options.useLocale !== defaultLocale) && options.useLocale)
   })
   return locales.filter(
@@ -232,7 +230,7 @@ const replaceurls = (text, locale) => {
     target: '/type/$1"',
     model: "application::type.type",
     identifier: "slug"
-  },{
+  }, {
     original: '/\\?thema=([a-z0-9-/]+)"',
     target: '/theme/$1"',
     model: "application::theme.theme",
@@ -251,15 +249,15 @@ const replaceurls = (text, locale) => {
 
   // console.log('urlMap', urlMap)
 
-  const replacements = urlMap.map(({original, target, localizations, model, identifier}) => {
-    
+  const replacements = urlMap.map(({ original, target, localizations, model, identifier }) => {
+
     const pattern = new RegExp(original, 'g')
     // // if text contains a replacement and locale is set, retrieve replacement translation
     // not needed ATM, oooof
     // if (text.match(pattern) && locale) {
     //   // find rest of the url
     // }
-    
+
     return [
       pattern,
       localizations && localizations[locale] || target
@@ -270,7 +268,7 @@ const replaceurls = (text, locale) => {
     result = result.replace(current[0], current[1])
     return result
   }, text)
-  
+
   for (const replacement of replacements) {
     // console.log('calling replace', replacement[0], 'with', replacement[1])
     text = text.replace(replacement[0], replacement[1])

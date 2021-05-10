@@ -74,10 +74,10 @@ const HomePage = () => {
   }, [])
 
   useEffect(() => {
-    setTargetModel(models.find(model => 
+    setTargetModel(models.find(model =>
       model.uid === selectedContentType
     ))
-    setHasWorkflow(!!modelOptions.find(model => 
+    setHasWorkflow(!!modelOptions.find(model =>
       model.value === selectedContentType && model.workflow
     ))
   }, [selectedContentType])
@@ -112,7 +112,7 @@ const HomePage = () => {
   const getModels = async () => {
     setIsLoading(true);
     try {
-	    const response = await request("/content-type-builder/content-types", {
+      const response = await request("/content-type-builder/content-types", {
         method: "GET"
       });
 
@@ -144,7 +144,7 @@ const HomePage = () => {
   const getLocales = async () => {
     setIsLoading(true);
     try {
-	    const localesFound = await request("/i18n/locales", {
+      const localesFound = await request("/i18n/locales", {
         method: "GET"
       });
       const localeOptionsFound = localesFound.map(locale => {
@@ -163,7 +163,7 @@ const HomePage = () => {
       strapi.notification.toggle({ type: 'error', message: `${e}` });
     }
     return [];
-  };  
+  };
 
   const onRequestAnalysis = async (config) => {
     setIsAnalyzing(true)
@@ -239,18 +239,18 @@ const HomePage = () => {
             <div className="col-3">
               <Label htmlFor="locales">Active Locales</Label>
               {localeOptions.map(locale => <Text key={`locale_${locale.value}`}>
-                <Globe fill={locale.default ? 'green' : 'silver'} style={{ width: '2rem'}}/>
+                <Globe fill={locale.default ? 'green' : 'silver'} style={{ width: '2rem' }} />
                 {locale.label}
                 {locale.default && <Success />}
               </Text>)}
             </div>
-            { selectedContentType && (
+            {selectedContentType && (
               <div className="col-3">
                 <Label htmlFor="workflow">Workflow enabled {
-                  hasWorkflow ? <Success fill="green" /> : <Fail color="silver" /> 
+                  hasWorkflow ? <Success fill="green" /> : <Fail color="silver" />
                 }
                 </Label>
-                { hasWorkflow && 
+                { hasWorkflow &&
                   <Checkbox
                     message="Save imported items as Draft"
                     name="saveAsDraft"
@@ -258,14 +258,15 @@ const HomePage = () => {
                 }
               </div>
             )}
-            </Row>
-            { targetModel && (
+          </Row>
+          {targetModel && (
             <Row className="row">
               <div className="col-3">
                 <Label htmlFor="insertOrUpdate" message="Update records if possible" />
                 <Toggle
                   name="insertOrUpdate"
                   value={insertOrUpdate}
+                  disabled={!analysis}
                   onChange={e => setInsertOrUpdate(!!e.target.value)}
                 />
               </div>
@@ -293,7 +294,7 @@ const HomePage = () => {
                             analysis={analysis}
                             handleChange={updateSourceField => setSourceField(updateSourceField)}
                           />
-                          { (!sourceField || sourceField === "none") && <Fail style={{marginLeft: '1em'}}/> }
+                          {(!sourceField || sourceField === "none") && <Fail style={{ marginLeft: '1em' }} />}
                         </Flex>
                       </div>
                       <div className="col-3">
@@ -305,7 +306,7 @@ const HomePage = () => {
                             targetModel={targetModel}
                             handleChange={updateTargetField => setTargetField(updateTargetField)}
                           />
-                          { (!targetField || targetField === "none") && <Fail style={{marginLeft: '1em'}} /> }
+                          {(!targetField || targetField === "none") && <Fail style={{ marginLeft: '1em' }} />}
                         </Flex>
                       </div>
                     </>
@@ -314,7 +315,7 @@ const HomePage = () => {
               )}
             </Row>
           )}
-			    <Row>
+          <Row>
             {importSource === "upload" && (
               <UploadFileForm
                 onRequestAnalysis={onRequestAnalysis}
@@ -339,7 +340,9 @@ const HomePage = () => {
       {analysis && (
         <Row className="row">
           <MappingTable
-            {...{   analysis, targetModel, sourceField, targetField }}
+            {...{ analysis, targetModel }}
+            updateSourceField={sourceField}
+            updateTargetField={targetField}
             handleChange={setFieldMapping}
             options={{
               locales: localeOptions,
