@@ -10,12 +10,12 @@ import { Globe } from "@buffetjs/icons";
 
 const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, targetModel, locales, mapping, models }) => {
 
-  const { schema: { attributes, pluginOptions: { i18n: { localized }}}} = targetModel
+  const { schema: { attributes, pluginOptions: { i18n: { localized } } } } = targetModel
   const fieldAttributes = attributes[targetField]
   const hasLocalizedOptions = fieldAttributes?.pluginOptions?.i18n?.localized || false
   const relationType = fieldAttributes?.nature
   const relatedModel = models.find(model => model.uid === fieldAttributes?.target) || null
-  const { useSeparator, useIdentifier, useLocale, toMarkdown, stripTags, parseUrls, createMissing, importMediaToField } = mapping.options || {}
+  const { useSeparator, useIdentifier, useLocale, toMarkdown, stripTags, parseUrls, createMissing, importMediaToField } = mapping || {}
   const defaultLocale = locales.find(locale => locale.default)
 
   // global options
@@ -58,7 +58,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
   // const relatedModelFields = relatedModel && relatedModel[0]?.attributes?.map(attribute => (
   //   { label: attribute, value: attribute}
   // ))
-  
+
   const toOne = typeof relationType === "string" && relationType.indexOf("ToOne") > 2
 
   // console.log('MappingOptions models', models, 'relatedModel', relatedModel, 'targetField', targetField, 'targetModel', targetModel)
@@ -105,7 +105,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
       )}
       {hasLocalizedOptions && (
         <Flex alignItems="center" justifyContent="flex-start">
-          <Globe fill={defaultLocale?.value === useLocale || !useLocale ? 'green' : 'silver'} style={{ width: '2rem'}}/>
+          <Globe fill={defaultLocale?.value === useLocale || !useLocale ? 'green' : 'silver'} style={{ width: '2rem' }} />
           <LocaleSelect
             name={`${stat.fieldName}_mediaTargetSelect`}
             value={useLocale}
@@ -114,41 +114,41 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
               handleChange({ useLocale: locale })
             }
           />
-        </Flex>        
+        </Flex>
       )}
       {relationType && (
-          <>
-            { !toOne && 
-              <Flex alignItems="center" justifyContent="flex-start">
-                <Label
-                  htmlFor={`${stat.fieldName}_relationSeparatorInput`}
-                  message={"Use separator: "}
-                />
-                <SeparatorInput
-                  name={`${stat.fieldName}_relationSeparatorInput`}
-                  value={useSeparator}
-                  autoFocus={active}
-                  onFocus={() => handleFocus(stat.fieldName)}
-                  handleChange={separator =>
-                    handleChange({ useSeparator: separator })
-                  }
-                />
-              </Flex>
-            }
+        <>
+          { !toOne &&
             <Flex alignItems="center" justifyContent="flex-start">
               <Label
-                htmlFor={`${stat.fieldName}_relationIdentifierSelect`}
-                message={"Use identifier: "}
+                htmlFor={`${stat.fieldName}_relationSeparatorInput`}
+                message={"Use separator: "}
               />
-              <RelationFieldSelect
-                name={`${stat.fieldName}_relationIdentifierSelect`}
-                targetModel={relatedModel}
-                value={useIdentifier}
-                handleChange={field =>
-                  handleChange({ useIdentifier: field })
+              <SeparatorInput
+                name={`${stat.fieldName}_relationSeparatorInput`}
+                value={useSeparator}
+                autoFocus={active}
+                onFocus={() => handleFocus(stat.fieldName)}
+                handleChange={separator =>
+                  handleChange({ useSeparator: separator })
                 }
               />
             </Flex>
+          }
+          <Flex alignItems="center" justifyContent="flex-start">
+            <Label
+              htmlFor={`${stat.fieldName}_relationIdentifierSelect`}
+              message={"Use identifier: "}
+            />
+            <RelationFieldSelect
+              name={`${stat.fieldName}_relationIdentifierSelect`}
+              targetModel={relatedModel}
+              value={useIdentifier}
+              handleChange={field =>
+                handleChange({ useIdentifier: field })
+              }
+            />
+          </Flex>
           {
             !toOne && <Checkbox
               message={"Create missing"}
@@ -157,7 +157,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
               onChange={e => handleChange({ createMissing: e?.target.value })}
             />
           }
-        </>        
+        </>
       )}
     </div>
   );
@@ -169,7 +169,7 @@ MappingOptions.propTypes = {
   targetModel: PropTypes.object,
   handleChange: PropTypes.func,
   locales: PropTypes.array,
-  options: PropTypes.object,
+  mapping: PropTypes.object,
   models: PropTypes.array,
 };
 

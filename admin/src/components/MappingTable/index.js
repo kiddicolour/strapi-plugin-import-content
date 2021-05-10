@@ -29,7 +29,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
     }
     setMapping(newMapping)
     handleChange(newMapping)
-  }, [analysis])
+  }, [analysis, targetModel])
 
   const detectFieldnameSeparator = (name) => {
     return name.indexOf(fieldNameSeparator) > 0 ? fieldNameSeparator : false
@@ -90,10 +90,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
           }
           newMapping[fieldName].targetField = baseName
           if (locale) {
-            newMapping[fieldName].options = {
-              ...mapping[fieldName]?.options,
-              useLocale: locale
-            }
+            newMapping[fieldName].useLocale = mapping[fieldName]?.useLocale || locale
           }
         }
 
@@ -105,42 +102,35 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
         const relationType = targetModel.schema.attributes[fieldName]?.nature || false
         const relatedModelName = relationType && targetModel.schema.attributes[fieldName]?.collection || null
         const relatedModel = models.find(model => model.uid === targetModel.schema.attributes[fieldName]?.target) || null
-        
-        if (relatedModel) {
-          newMapping[fieldName].options = {
-            useIdentifier: "id",
-            relatedModel: relatedModel.uid,
-            relationType,
-            ...mapping[fieldName]?.options,
-          }
 
+        if (relatedModel) {
+          newMapping[fieldName].useIdentifier = mapping[fieldName]?.useIdentifier || "id"
+          newMapping[fieldName].relatedModel = relatedModel.uid
+          newMapping[fieldName].relationType = relationType
         }
       }
     }
 
     return newMapping
   }
-  
-  const changeMappingOptions = (stat) => (options) => {
 
-    const newMapping = {
-      ...mapping,
-      [stat.fieldName]: {
-        ...mapping[stat.fieldName],
-        options: {
-          ...mapping[stat.fieldName]?.options,
-          ...options
-        }
-      }
-    }
+  // const changeMappingOptions = (stat) => (options) => {
 
-    setMapping(newMapping)
-    handleChange(newMapping)
-  };
-  
+  //   const newMapping = {
+  //     ...mapping,
+  //     [stat.fieldName]: {
+  //       ...mapping[stat.fieldName],
+  //       ...options
+  //     }
+  //   }
+
+  //   setMapping(newMapping)
+  //   handleChange(newMapping)
+  // };
+
   const setMappingOptions = (source, targetField, options) => {
 
-    console.log(`setMappingOptions for ${source} -> ${targetField} with options`, options)
+    // console.log(`setMappingOptions for ${source} -> ${targetField} with options`, options)
 
     // try to guess language from fieldName
     const { fieldName, locale } = getFieldNameDetails(source)
@@ -150,25 +140,19 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
         ...mapping,
         [fieldName]: {
           ...mapping[fieldName],
+          ...options,
           targetField: targetField || mapping[fieldName]?.targetField,
-          options: {
-            ...mapping[fieldName]?.options,
-            ...options,
-          }
         }
       }
 
       if (locale) {
-        newMapping[source].options = {
-          ...newMapping[source].options,
-          useLocale: locale,
-        }
+        newMapping[source].useLocale = newMapping[source].useLocale || locale
       }
-  
+
+      // console.log('newMapping', newMapping)
+
       setMapping(newMapping)
       handleChange(newMapping)
-
-      inputRef.current.focus()
     }
 
   };
@@ -177,6 +161,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
     const { fieldName, count, format, minLength, maxLength, meanLength } = row;
     const active = currentField === fieldName
     const targetField = mapping[fieldName]?.targetField
+    const showMapping = targetField && targetField !== "none"
     return (
       <tr onClick={() => setCurrentField(fieldName)} key={`row_${fieldName}`} style={{ paddingTop: 18 }}>
         <td>{fieldName}</td>
@@ -202,7 +187,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
           <p>{meanLength}</p>
         </td>
         <td>
-          { targetField && (
+          {showMapping && (
             <MappingOptions
               targetModel={targetModel}
               targetField={targetField}

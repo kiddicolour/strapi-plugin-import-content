@@ -24,12 +24,12 @@ const buildLocalizationsArray = (records, current) => {
   }
 
   return records
-  .filter(record => record.id !== current.id)
-  .map(record => ({
-    id: record.id,
-    locale: record.locale,
-    published_at: record.published_at
-  }))
+    .filter(record => record.id !== current.id)
+    .map(record => ({
+      id: record.id,
+      locale: record.locale,
+      published_at: record.published_at
+    }))
 }
 
 const importNextItem = async importConfig => {
@@ -47,7 +47,7 @@ const importNextItem = async importConfig => {
 
   // since we can either create or update records, use a variable early as there's
   // multiple scenarios where none pr either of the 2 are possible
-  const operations = [ 'create', 'update']
+  const operations = ['create', 'update']
   let operation
 
 
@@ -84,7 +84,7 @@ const importNextItem = async importConfig => {
       if (update) {
         // try to fetch record by targetField
         existing = await strapi.query(importConfig.contentType).findOne(
-          addParams({[targetField]: sourceItem[sourceField]}, importedItem.locale)
+          addParams({ [targetField]: sourceItem[sourceField] }, importedItem.locale)
         )
 
         if (existing) {
@@ -107,23 +107,24 @@ const importNextItem = async importConfig => {
               .query(importConfig.contentType)
               .create(importedItem);
 
-              // only store id of first created record
-              if (!id) {
-                id = savedContent.id
-              }
-          break
+            // only store id of first created record
+            if (!id) {
+              id = savedContent.id
+            }
+            break
 
           case 'update':
             if (!existing) { console.error("Update without existing, how??", importedItem) }
             savedContent = await strapi
               .query(importConfig.contentType)
-              .update({ id: existing.id}, importedItem)
-          break
+              .update({ id: existing.id }, importedItem)
+            break
         }
 
         if (savedContent.id) {
 
           console.log('Got savedContent', savedContent.id)
+          // const uploadedFiles = [];
           const uploadedFiles = await importMediaFiles(
             savedContent,
             sourceItem,
@@ -137,7 +138,7 @@ const importNextItem = async importConfig => {
             ContentType: importConfig.contentType,
             importedFiles: { fileIds }
           });
-  
+
           savedContents.push(savedContent)
         }
 
@@ -178,7 +179,7 @@ const importNextItem = async importConfig => {
       const localizations = buildLocalizationsArray(savedContents, content)
       if (localizations) {
         await strapi.query(importConfig.contentType)
-        .update({id: content.id}, {localizations: localizations});
+          .update({ id: content.id }, { localizations: localizations });
         // console.log('UpdatedLocalization ', localizations, 'result', result)
       }
     }
