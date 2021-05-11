@@ -27,6 +27,7 @@ const RelationFieldSelect = ({ handleChange, targetModel, value, name }) => {
   const handleChanges = ({ target: { value } }) => {
     // strapi.notification.toggle({type: 'warning', message: 'RelationFieldSelect handleChanges ' + JSON.stringify(value)})
     // setSelectedRelation(value);
+    console.log('RelationFieldSelect handleChanges with value', value)
     handleChange(value);
   }
 
@@ -66,4 +67,4 @@ RelationFieldSelect.propTypes = {
   name: PropTypes.string,
 };
 
-export default memo(RelationFieldSelect);
+export default RelationFieldSelect;

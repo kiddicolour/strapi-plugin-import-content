@@ -40,7 +40,7 @@ const storeFiles = async file => {
   //   // path: `./public/uploads/${file.name}`,
   //   ...rest
   // }
-  // console.log('file before upload call', rest, 'related', related)
+  console.log('rest before upload call', rest, 'related', related)
 
   // await strapi.plugins.upload.provider.upload(file)
   // console.log('file after provider upload', file)

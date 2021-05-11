@@ -82,7 +82,7 @@ const importLocalizedFields = async (sourceItem, fieldMapping, locale, saveAsDra
 
   for (const sourceField of Object.keys(fieldMapping)) {
     const { targetField, useLocale, relatedModel, toMarkdown, parseUrls, stripTags } = fieldMapping[sourceField];
-    // console.log('process localized fiueld ', sourceField, 'useLocale', useLocale, 'targetField', targetField)
+    // console.log('process localized field ', sourceField, 'useLocale', useLocale, 'targetField', targetField)
     if (!targetField || targetField === "none") {
       continue
     }
@@ -214,6 +214,7 @@ const getLocales = (fieldMapping, defaultLocale) => {
   Object.values(fieldMapping).forEach(({ options }) => {
     locales.push(options && (!defaultLocale || options.useLocale !== defaultLocale) && options.useLocale)
   })
+  // console.log('found locale(s)', locales, 'for fieldMapping', fieldMapping, 'defaultLocale', defaultLocale)
   return locales.filter(
     (locale, index, self) => locale && self.indexOf(locale) === index
   )

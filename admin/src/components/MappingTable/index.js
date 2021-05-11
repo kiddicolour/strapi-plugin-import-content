@@ -36,7 +36,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
     // somehow this only works with 1 separator :mindblown:
     // const separators = ["_", "-", " "]
     // return separators.reduce(
-    //   (result, separator) => 
+    //   (result, separator) =>
     //     result = result || name.indexOf(separator) > 0 ? separator : false
     //   , false
     // )
@@ -134,6 +134,10 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
 
     // try to guess language from fieldName
     const { fieldName, locale } = getFieldNameDetails(source)
+
+    // merge existing options if not clear
+    const newOptions = Object.assign(clear ? {} : (mapping[fieldName] || {}), opts || {})
+    // console.log(`setMappingOptions for ${source} -> ${targetField} with opts`, opts, 'clear', clear, 'newOptions', newOptions)
 
     if (fieldName) {
       const newMapping = {

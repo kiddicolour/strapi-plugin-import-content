@@ -64,7 +64,7 @@ const HomePage = () => {
   useEffect(() => {
     getModels().then(res => {
       const { modelsFound, modelOptionsFound } = res;
-      // console.log('modelsFound, modelOptionsFound', modelsFound, modelOptionsFound)
+      console.log('modelsFound, modelOptionsFound', modelsFound, modelOptionsFound)
       setModels(modelsFound)
       setModelOptions(modelOptionsFound)
       setTargetModel(modelsFound[0])

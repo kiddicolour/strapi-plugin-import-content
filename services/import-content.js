@@ -87,6 +87,8 @@ const importNextItem = async importConfig => {
           addParams({ [targetField]: sourceItem[sourceField] }, importedItem.locale)
         )
 
+        // console.log('getting record zwih pâransz', addParams({ [targetField]: sourceItem[sourceField] }, importedItem.locale) )
+
         if (existing) {
           console.log(`Found existing for ${targetField}: ${sourceItem[sourceField]}`, existing.id)
           operation = 'update'

@@ -22,7 +22,7 @@ const fileFromBuffer = (mimeType, extension, buffer) => {
     hash: fid.replace(/-/g, ""),
     name: `${fid}.${extension}`,
     ext: `.${extension}`,
-    type: mimeType,
+    type: extension === 'png' ? 'image/png' : mimeType,
     size: (buffer.length / 1000).toFixed(2)
   };
 };

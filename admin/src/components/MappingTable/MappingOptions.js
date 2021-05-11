@@ -18,6 +18,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
   const { useSeparator, useIdentifier, useLocale, toMarkdown, stripTags, parseUrls, createMissing, importMediaToField } = mapping || {}
   const defaultLocale = locales.find(locale => locale.default)
 
+  // console.log('mappingOptions mapping', mapping)
   // global options
   // locales, targetModel, models
 
@@ -28,7 +29,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
   // hasLocalizedOptions, relationIdentifier, relationType, relatedModel
 
   // const [locale, setLocale] = useState(locales.reduce(
-  //   (result, locale) => 
+  //   (result, locale) =>
   //     result = result || (locale.default ? locale.value : false)))
   // const [separator, setSeparator] = useState("|")
   // const [relationIdentifier, setRelationIdentifier] = useState()
@@ -39,7 +40,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
   // const [importMediaToField, setImportMediaToField] = useState()
 
   // state imported field options
-  // locale, separator, relationIdentifier, toMarkdown, stripTags, parseUrls, 
+  // locale, separator, relationIdentifier, toMarkdown, stripTags, parseUrls,
   // createMissing, importMediaToField, relationType
 
   // const localized = targetModel.schema.pluginOptions?.i18n?.localized
@@ -68,7 +69,7 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
       {stat.format === "xml" && (
         <Flex flexDirection="column">
           {/* <Checkbox
-            message={"Strip Tags"} 
+            message={"Strip Tags"}
             name={`${stat.fieldName}_stripCheckbox`}
             value={stripTags}
             onChange={e => handleChange({ stripTags: e?.target.value })}
