@@ -108,11 +108,6 @@ const importNextItem = async importConfig => {
             savedContent = await strapi
               .query(importConfig.contentType)
               .create(importedItem);
-
-            // only store id of first created record
-            if (!id) {
-              id = savedContent.id
-            }
             break
 
           case 'update':
@@ -126,6 +121,11 @@ const importNextItem = async importConfig => {
         if (savedContent.id) {
 
           console.log('Got savedContent', savedContent.id)
+
+          // only store id of first record
+          if (!id) {
+            id = savedContent.id
+          }
           // const uploadedFiles = [];
           const uploadedFiles = await importMediaFiles(
             savedContent,

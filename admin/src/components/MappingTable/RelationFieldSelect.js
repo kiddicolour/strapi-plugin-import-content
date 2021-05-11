@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 
 import { Select } from "@buffetjs/core";
 import { get } from "lodash";
-import { StrapiProvider } from 'strapi-helper-plugin';
 
 const RelationFieldSelect = ({ handleChange, targetModel, value, name }) => {
 

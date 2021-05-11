@@ -44,7 +44,7 @@ const HomePage = () => {
   const [models, setModels] = useState([])
   const [localeOptions, setLocaleOptions] = useState([])
   const [locales, setLocales] = useState([])
-  const [saveAsDraft, setSaveAsDraft] = useState(true)
+  const [saveAsDraft, setSaveAsDraft] = useState(false)
   const [targetModel, setTargetModel] = useState()
   const [hasWorkflow, setHasWorkflow] = useState(false)
   const [defaultLocale, setDefaultLocale] = useState("en")
@@ -181,11 +181,6 @@ const HomePage = () => {
       strapi.notification.toggle({ type: 'error', message: `Analyze Failed, try again` });
       strapi.notification.toggle({ type: 'error', message: `${e}` });
     }
-  };
-
-  const getTargetModel = () => {
-    if (!models) return null;
-    return models.find(model => model.uid === selectedContentType);
   };
 
   return (
