@@ -29,7 +29,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
     }
     setMapping(newMapping)
     handleChange(newMapping)
-  }, [analysis, targetModel])
+  }, [analysis, targetModel, updateSourceField, updateTargetField])
 
   const detectFieldnameSeparator = (name) => {
     return name.indexOf(fieldNameSeparator) > 0 ? fieldNameSeparator : false
@@ -74,7 +74,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
     if (!analysis?.fieldStats || !targetModel) {
       return
     }
-    const newMapping = {}
+    const newMapping = mapping || {}
 
     for (const stat of analysis.fieldStats) {
       const { fieldName, baseName, locale } = getFieldNameDetails(stat.fieldName)
@@ -82,6 +82,10 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
       if (fieldName) {
         if (!newMapping[fieldName]) {
           newMapping[fieldName] = {}
+        }
+
+        if (fieldName === updateSourceField && updateTargetField && updateTargetField !== "none") {
+          newMapping[fieldName].targetField = updateTargetField
         }
 
         if (baseName) {
@@ -128,19 +132,20 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
   //   handleChange(newMapping)
   // };
 
-  const setMappingOptions = (source, targetField, options) => {
-
-    // console.log(`setMappingOptions for ${source} -> ${targetField} with options`, options)
+  const setMappingOptions = (source, targetField, opts, clear) => {
 
     // try to guess language from fieldName
     const { fieldName, locale } = getFieldNameDetails(source)
+
+    // merge existing options if not clear
+    const newOptions = Object.assign(clear ? {} : (mapping[fieldName] || {}), opts || {})
+    console.log(`setMappingOptions for ${source} -> ${targetField} with opts`, opts, 'clear', clear, 'newOptions', newOptions)
 
     if (fieldName) {
       const newMapping = {
         ...mapping,
         [fieldName]: {
-          ...mapping[fieldName],
-          ...options,
+          ...newOptions,
           targetField: targetField || mapping[fieldName]?.targetField,
         }
       }
@@ -194,7 +199,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
               active={active}
               stat={row}
               handleFocus={(field => setCurrentField(field))}
-              handleChange={(options) => setMappingOptions(fieldName, targetField, options) || true}
+              handleChange={(opts) => setMappingOptions(fieldName, targetField, opts)}
               locales={locales}
               mapping={mapping[fieldName]}
               models={models}
@@ -207,7 +212,7 @@ const MappingTable = ({ analysis, targetModel, handleChange, options, updateTarg
               targetModel={targetModel}
               name={`${fieldName}TargetField`}
               value={targetField || (updateSourceField == fieldName && updateTargetField) || ''}
-              handleChange={(field, options) => setMappingOptions(fieldName, field, options)}
+              handleChange={(field, options) => setMappingOptions(fieldName, field, options, true)}
             />
           )}
         </td>

@@ -23,14 +23,8 @@ const fetchFiles = url =>
       resolve(fileFromBuffer(mimeType, extension, body));
     });
   });
+
 const storeFiles = async file => {
-  const uploadProviderConfig = await strapi
-    .store({
-      environment: strapi.config.environment,
-      type: "plugin",
-      name: "upload"
-    })
-    .get({ key: "provider" });
   const { buffer, related, ...rest } = file
   // console.log('Buffer', file.buffer)
   // let streamBuffer = file.buffer.createReadStream(someBuffer);
@@ -60,14 +54,12 @@ const relateFileToContent = ({
   fileBuffer
 }) => {
   // console.log('Added related info to fileBuffer', fileBuffer.related)
-  fileBuffer.related = [
-    {
-      refId: contentId,
-      ref: contentType,
-      source: "content-manager",
-      field: targetField
-    }
-  ];
+  fileBuffer.related = {
+    refId: contentId,
+    ref: contentType,
+    source: "content-manager",
+    field: targetField
+  };
   return fileBuffer;
 };
 

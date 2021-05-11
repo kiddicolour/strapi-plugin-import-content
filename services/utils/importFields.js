@@ -7,8 +7,8 @@ const { addParams } = require("./utils");
  * Creates a single record or an set of records in case multiple languages are defined.
  * If many records are returned, the first record will be the full record
  * the others will be limited to only the localized field values.
- * 
- * Reason: Strapi needs the id of the initial record to add translations 
+ *
+ * Reason: Strapi needs the id of the initial record to add translations
  * as the creation procedure accepts only a single language at a time
  *
  */
@@ -211,8 +211,10 @@ const processField = async (sourceItem, sourceField, stripTags, toMarkdown, pars
 
 const getLocales = (fieldMapping, defaultLocale) => {
   const locales = [];
-  Object.values(fieldMapping).forEach(({ options }) => {
-    locales.push(options && (!defaultLocale || options.useLocale !== defaultLocale) && options.useLocale)
+  Object.values(fieldMapping).forEach( mapping => {
+    if (mapping && mapping.useLocale && (!defaultLocale || mapping.useLocale !== defaultLocale)) {
+      locales.push(mapping.useLocale)
+    }
   })
   return locales.filter(
     (locale, index, self) => locale && self.indexOf(locale) === index

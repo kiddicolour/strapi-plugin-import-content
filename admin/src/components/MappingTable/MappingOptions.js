@@ -144,8 +144,8 @@ const MappingOptions = ({ stat, handleFocus, active, handleChange, targetField, 
               name={`${stat.fieldName}_relationIdentifierSelect`}
               targetModel={relatedModel}
               value={useIdentifier}
-              handleChange={field =>
-                handleChange({ useIdentifier: field })
+              handleChange={identifier =>
+                handleChange({ useIdentifier: identifier, relatedModel: relatedModel.uid, relationType })
               }
             />
           </Flex>
